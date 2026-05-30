@@ -149,7 +149,7 @@ export default function Chat({ documents, onJumpToSource, saveHistory }) {
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [model, setModel] = useState('gemini-flash')
+  const [model, setModel] = useState('gpt-4o-mini')
   const [action, setAction] = useState('ask')
   const [summarizeDoc, setSummarizeDoc] = useState('')
   const [summarizeType, setSummarizeType] = useState('short')
