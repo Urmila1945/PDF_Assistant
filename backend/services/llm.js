@@ -10,16 +10,22 @@ const MODEL_MAP = {
 async function chatWithLLM(systemPrompt, userPrompt, modelChoice = 'gemini-flash') {
   const model = MODEL_MAP[modelChoice] || MODEL_MAP['gemini-flash'];
 
-  if (!GEMINI_KEY || GEMINI_KEY.includes('AQ.Ab8RN6')) {
-      console.error('Invalid or revoked GEMINI_API_KEY');
-      throw new Error('Your Gemini API key was revoked by GitHub/Google because it was leaked. Please update .env with a new Gemini key.');
+  if (!GEMINI_KEY) {
+      throw new Error('GEMINI_API_KEY not set in .env');
   }
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
-  const resp = await axios.post(url, {
-    contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
-    generationConfig: { maxOutputTokens: 2048, temperature: 0.2 }
-  });
-  return resp.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_KEY}`;
+    try {
+        const resp = await axios.post(url, {
+            contents: [{ role: 'user', parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }] }],
+            generationConfig: { maxOutputTokens: 2048, temperature: 0.2 }
+        });
+        return resp.data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } catch (err) {
+        if (err.response && err.response.status === 429) {
+            throw new Error('Gemini API Rate Limit Exceeded (429). Please wait a minute and try again.');
+        }
+        throw err;
+    }
 }
 
 module.exports = { chatWithLLM };
