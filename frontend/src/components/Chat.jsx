@@ -10,7 +10,9 @@ const API = import.meta.env.VITE_API_URL || '/api'
 
 const MODELS = [
   { id: 'gemini-flash',   label: 'Gemini 2.5 Flash', icon: '⚡', color: 'text-blue-400',   disabled: false },
-  { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro',   icon: '🔮', color: 'text-purple-400', disabled: false }
+  { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro',   icon: '✨', color: 'text-purple-400', disabled: false },
+  { id: 'gpt-4o-mini',    label: 'GPT-4o Mini',      icon: '🤖', color: 'text-green-400',  disabled: false },
+  { id: 'gpt-4o',         label: 'GPT-4o',           icon: '🧠', color: 'text-green-500',  disabled: false }
 ]
 
 const ACTIONS = [
