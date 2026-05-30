@@ -1,28 +1,13 @@
 const axios = require('axios');
 
 const GEMINI_KEY = process.env.GEMINI_API_KEY;
-const OPENAI_KEY = process.env.OPENAI_API_KEY;
 const EMBED_MODEL = 'models/gemini-embedding-001';
 
 async function embedTexts(texts = []) {
   if (!texts.length) return [];
+  if (!GEMINI_KEY || GEMINI_KEY.includes('AQ.Ab8RN6')) throw new Error('GEMINI_API_KEY not set in .env or is revoked. Please update it with a valid key.');
 
-  // Try OpenAI first if Gemini key is revoked or missing
-  if (OPENAI_KEY && (!GEMINI_KEY || GEMINI_KEY.includes('AQ.Ab8RN6'))) {
-    const url = 'https://api.openai.com/v1/embeddings';
-    const resp = await axios.post(url, {
-      model: 'text-embedding-3-small',
-      input: texts.map(String),
-      dimensions: 768 // Keep 768 to match Gemini dimension in MongoDB vector search index
-    }, {
-      headers: { 'Authorization': `Bearer ${OPENAI_KEY}` }
-    });
-    return resp.data.data.map(d => d.embedding);
-  }
-
-  // Fallback to Gemini
-  if (!GEMINI_KEY) throw new Error('Neither OPENAI_API_KEY nor GEMINI_API_KEY is set in .env');
-
+  // embedContent does not support batch — call sequentially in parallel (max 10 at a time)
   const results = [];
   const batchSize = 10;
   for (let i = 0; i < texts.length; i += batchSize) {
