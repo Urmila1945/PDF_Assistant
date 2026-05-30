@@ -6,7 +6,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const API = '/api'
+const API = import.meta.env.VITE_API_URL || '/api'
 
 const MODELS = [
   { id: 'gemini-flash',   label: 'Gemini 2.5 Flash', icon: '⚡', color: 'text-blue-400',   disabled: false },

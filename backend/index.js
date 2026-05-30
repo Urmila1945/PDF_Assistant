@@ -33,6 +33,7 @@ app.use('/api/upload', uploadRoute);
 app.use('/api/query', queryRoute);
 app.use('/api/status', statusRoute);
 
+app.get('/', (req, res) => res.send('BrainHeaters API is running 🚀'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 const PORT = process.env.PORT || 4000;

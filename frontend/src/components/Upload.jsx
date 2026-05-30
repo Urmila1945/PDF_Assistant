@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const API = '/api'
+const API = import.meta.env.VITE_API_URL || '/api'
 
 export default function Upload({ onIndexed }) {
   const [files, setFiles] = useState([])

@@ -7,7 +7,7 @@ import Dashboard from './components/Dashboard'
 import { useQuery } from 'react-query'
 import axios from 'axios'
 
-const API = '/api'
+const API = import.meta.env.VITE_API_URL || '/api'
 
 const tabs = [
   { id: 'chat', label: 'Chat', icon: '💬' },
@@ -52,7 +52,8 @@ export default function App() {
   }, [refetchStatus])
 
   const handleOpenDoc = useCallback((doc) => {
-    const url = `/uploads/${encodeURIComponent(doc.name)}`
+    const baseUrl = API.replace('/api', '')
+    const url = `${baseUrl}/uploads/${encodeURIComponent(doc.name)}`
     setSelectedPdfUrl(url)
     setSelectedPage(1)
     setMatchText(null)
