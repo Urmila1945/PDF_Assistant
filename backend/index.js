@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const uploadRoute = require('./routes/upload');
 const queryRoute = require('./routes/query');
 const statusRoute = require('./routes/status');
+const authRoute = require('./routes/auth');
 const { connect } = require('./lib/db');
 
 const app = express();
@@ -32,6 +33,7 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api/upload', uploadRoute);
 app.use('/api/query', queryRoute);
 app.use('/api/status', statusRoute);
+app.use('/api/auth', authRoute);
 
 app.get('/', (req, res) => res.send('BrainHeaters API is running 🚀'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));

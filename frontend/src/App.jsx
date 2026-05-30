@@ -21,6 +21,17 @@ export default function App() {
   const [selectedPage, setSelectedPage] = useState(1)
   const [matchText, setMatchText] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  
+  // Auth state
+  const [user, setUser] = useState(null)
+  const [token, setToken] = useState(() => localStorage.getItem('token') || null)
+  
+  // Auth forms state
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' })
+  const [signupForm, setSignupForm] = useState({ name: '', email: '', password: '' })
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
+
   const [saveHistory, setSaveHistory] = useState(() => {
     const saved = localStorage.getItem('saveHistory')
     return saved !== null ? JSON.parse(saved) : true
@@ -73,6 +84,65 @@ export default function App() {
       alert('Delete failed: ' + (err.response?.data?.error || err.message))
     }
   }, [refetchStatus, selectedPdfUrl])
+
+  // Auth Effects
+  React.useEffect(() => {
+    if (token) {
+      axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+        .then(res => setUser(res.data.user))
+        .catch(() => {
+          localStorage.removeItem('token')
+          setToken(null)
+          setUser(null)
+        })
+    }
+  }, [token])
+
+  // Auth Handlers
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setAuthLoading(true)
+    setAuthError('')
+    try {
+      const res = await axios.post(`${API}/auth/login`, loginForm)
+      const { token, user } = res.data
+      localStorage.setItem('token', token)
+      setToken(token)
+      setUser(user)
+      setActiveTab('chat')
+      setLoginForm({ email: '', password: '' })
+    } catch (err) {
+      setAuthError(err.response?.data?.error || err.message)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const handleSignup = async (e) => {
+    e.preventDefault()
+    setAuthLoading(true)
+    setAuthError('')
+    try {
+      const res = await axios.post(`${API}/auth/signup`, signupForm)
+      const { token, user } = res.data
+      localStorage.setItem('token', token)
+      setToken(token)
+      setUser(user)
+      setActiveTab('chat')
+      setSignupForm({ name: '', email: '', password: '' })
+    } catch (err) {
+      setAuthError(err.response?.data?.error || err.message)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    setToken(null)
+    setUser(null)
+    setActiveTab('login')
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-slate-950">
@@ -276,10 +346,15 @@ export default function App() {
                                 👤
                             </div>
                             <div>
-                                <h3 className="text-lg font-medium text-white">Guest User</h3>
-                                <p className="text-sm text-slate-400">Log in to sync your data across devices.</p>
+                                <h3 className="text-lg font-medium text-white">{user ? user.name : 'Guest User'}</h3>
+                                <p className="text-sm text-slate-400">{user ? user.email : 'Log in to sync your data across devices.'}</p>
                             </div>
                         </div>
+                        {user && (
+                            <button onClick={handleLogout} className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-lg shadow-red-500/20 text-sm">
+                                Log Out
+                            </button>
+                        )}
                     </div>
 
                     <div className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-6 border border-slate-700/50">
@@ -315,14 +390,15 @@ export default function App() {
                         <h2 className="text-2xl font-bold text-white">Welcome Back</h2>
                         <p className="text-sm text-slate-400 mt-2">Sign in to continue to BrainHeaters</p>
                     </div>
-                    <form className="space-y-4" onSubmit={e => e.preventDefault()}>
+                    {authError && <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm text-center">{authError}</div>}
+                    <form className="space-y-4" onSubmit={handleLogin}>
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-1.5">Email Address</label>
-                            <input type="email" placeholder="you@example.com" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
+                            <input type="email" required value={loginForm.email} onChange={e => setLoginForm({...loginForm, email: e.target.value})} placeholder="you@example.com" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
-                            <input type="password" placeholder="••••••••" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
+                            <input type="password" required value={loginForm.password} onChange={e => setLoginForm({...loginForm, password: e.target.value})} placeholder="••••••••" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
                         </div>
                         <div className="flex items-center justify-between text-sm mt-2">
                             <label className="flex items-center gap-2 cursor-pointer group">
@@ -331,12 +407,12 @@ export default function App() {
                             </label>
                             <a href="#" className="text-indigo-400 hover:text-indigo-300 transition-colors">Forgot password?</a>
                         </div>
-                        <button type="button" className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/25 mt-6">
-                            Sign In
+                        <button type="submit" disabled={authLoading} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/25 mt-6">
+                            {authLoading ? 'Signing In...' : 'Sign In'}
                         </button>
                     </form>
                     <div className="mt-6 text-center text-sm text-slate-400">
-                        Don't have an account? <button onClick={() => setActiveTab('signup')} className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Sign up</button>
+                        Don't have an account? <button onClick={() => { setActiveTab('signup'); setAuthError(''); }} className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Sign up</button>
                     </div>
                 </div>
               </motion.div>
@@ -357,25 +433,26 @@ export default function App() {
                         <h2 className="text-2xl font-bold text-white">Create an Account</h2>
                         <p className="text-sm text-slate-400 mt-2">Join BrainHeaters to save your research</p>
                     </div>
-                    <form className="space-y-4" onSubmit={e => e.preventDefault()}>
+                    {authError && <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400 text-sm text-center">{authError}</div>}
+                    <form className="space-y-4" onSubmit={handleSignup}>
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-1.5">Full Name</label>
-                            <input type="text" placeholder="John Doe" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
+                            <input type="text" required value={signupForm.name} onChange={e => setSignupForm({...signupForm, name: e.target.value})} placeholder="John Doe" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-1.5">Email Address</label>
-                            <input type="email" placeholder="you@example.com" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
+                            <input type="email" required value={signupForm.email} onChange={e => setSignupForm({...signupForm, email: e.target.value})} placeholder="you@example.com" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-300 mb-1.5">Password</label>
-                            <input type="password" placeholder="••••••••" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
+                            <input type="password" required value={signupForm.password} onChange={e => setSignupForm({...signupForm, password: e.target.value})} placeholder="••••••••" className="w-full bg-slate-800/50 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all placeholder:text-slate-500" />
                         </div>
-                        <button type="button" className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-medium py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/25 mt-6">
-                            Create Account
+                        <button type="submit" disabled={authLoading} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 disabled:opacity-50 text-white font-medium py-2.5 rounded-xl transition-all shadow-lg shadow-indigo-500/25 mt-6">
+                            {authLoading ? 'Creating Account...' : 'Create Account'}
                         </button>
                     </form>
                     <div className="mt-6 text-center text-sm text-slate-400">
-                        Already have an account? <button onClick={() => setActiveTab('login')} className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Log in</button>
+                        Already have an account? <button onClick={() => { setActiveTab('login'); setAuthError(''); }} className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors">Log in</button>
                     </div>
                 </div>
               </motion.div>
