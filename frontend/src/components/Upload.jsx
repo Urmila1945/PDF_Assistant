@@ -2,7 +2,8 @@ import React, { useState, useRef, useCallback } from 'react'
 import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const API = import.meta.env.VITE_API_URL || '/api'
+const rawApi = import.meta.env.VITE_API_URL || '';
+const API = (rawApi.startsWith('http') ? new URL(rawApi).origin : '') + '/api';
 
 export default function Upload({ onIndexed }) {
   const [files, setFiles] = useState([])

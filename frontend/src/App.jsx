@@ -7,10 +7,8 @@ import Dashboard from './components/Dashboard'
 import { useQuery } from 'react-query'
 import axios from 'axios'
 
-let rawApi = import.meta.env.VITE_API_URL || '/api';
-if (rawApi.endsWith('/')) rawApi = rawApi.slice(0, -1);
-if (rawApi.startsWith('http') && !rawApi.endsWith('/api')) rawApi += '/api';
-const API = rawApi;
+const rawApi = import.meta.env.VITE_API_URL || '';
+const API = (rawApi.startsWith('http') ? new URL(rawApi).origin : '') + '/api';
 
 const tabs = [
   { id: 'chat', label: 'Chat', icon: '💬' },
